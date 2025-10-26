@@ -109,10 +109,23 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useSession} from "next-auth/react";
+import { useRouter } from "next/navigation";
+
 
 export default function SignInPage() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
+  
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  useEffect(() => {
+          if (status === "loading") return;
+          if (session) {
+              router.push("/home");
+          } 
+      }, [session, status, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
