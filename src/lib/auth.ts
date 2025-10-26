@@ -44,13 +44,27 @@ export function verifyRefreshToken(token: string) {
 }
 
 // guard for protected routes
-export function requireAuth(req: Request): { id: string; email: string } | null {
+// export function requireAuth(req: Request): { id: string; email: string } | null {
+//   const authHeader = req.headers.get("authorization");
+//   if (!authHeader) return null;
+
+//   const token = authHeader.split(" ")[1];
+//   const decoded = verifyAccessToken(token);
+//   if (!decoded || typeof decoded === "string") return null;
+
+//   return decoded as { id: string; email: string };
+// }
+
+export function requireAuth(req: Request) {
   const authHeader = req.headers.get("authorization");
   if (!authHeader) return null;
 
   const token = authHeader.split(" ")[1];
-  const decoded = verifyAccessToken(token);
-  if (!decoded || typeof decoded === "string") return null;
-
-  return decoded as { id: string; email: string };
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (typeof decoded === "string") return null;
+    return decoded as { id: string; email: string };
+  } catch {
+    return null;
+  }
 }

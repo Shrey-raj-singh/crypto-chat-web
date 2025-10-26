@@ -2,16 +2,23 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-
+import { useSession } from "next-auth/react";
 export default function LandingPage() {
+  
   const router = useRouter();
-
+  const { data: session, status } = useSession();
+  
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (token) router.push("/home");
+    if (status === "loading") return; // wait for session check
+    if (session) router.push("/home");
     else router.push("/login");
-  }, [router]);
+  }, [session, status, router]);
 
+  //   useEffect(() => {
+  //     const token = localStorage.getItem("access_token");
+  //     if (token) router.push("/home");
+  //     else router.push("/login");
+  //   }, [router]);
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0f172a] to-[#1e293b] text-white">
       <div className="text-center">
@@ -25,3 +32,5 @@ export default function LandingPage() {
     </main>
   );
 }
+
+
