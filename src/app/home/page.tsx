@@ -8,30 +8,30 @@ export default function HomePage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [users, setUsers] = useState([]);
-  useEffect(() => {
-    if (status === "loading") return;
-    if (!session) {
-      router.push("/login");
-    } else {
-      fetchUsers();
-    }
-  }, [session, status, router]);
+    useEffect(() => {
+        if (status === "loading") return;
+        if (!session) {
+            router.push("/login");
+        } else {
+            fetchUsers();
+        }
+    }, [session, status, router]);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch("/api/users"); // session cookie sent automatically
-      console.log("Fetch users response:", res);
-      if (!res.ok) throw new Error("Failed to fetch users");
-      const data = await res.json();
-      console.log("Fetched users:", data.users);
-      setUsers(data.users || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const fetchUsers = async () => {
+        try {
+            const res = await fetch("/api/users"); // session cookie sent automatically
+            console.log("Fetch users response:", res);
+            if (!res.ok) throw new Error("Failed to fetch users");
+            const data = await res.json();
+            console.log("Fetched users:", data.users);
+            setUsers(data.users || []);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-// localStorage.removeItem("access_token"); // clear invalid token
-// router.push("/login");
+    // localStorage.removeItem("access_token"); // clear invalid token
+    // router.push("/login");
 
     // useEffect(() => {
     //     console.log("Session detail...", session);
@@ -47,6 +47,24 @@ export default function HomePage() {
     //     }
     //     fetchUsers();
     // }, []);
+    const handleOpenChat = async (receiverId: string) => {
+        try {
+            const res = await fetch("/api/chat/open", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ receiverId }),
+            });
+
+            const data = await res.json();
+            if (data.chatId) {
+                router.push(`/chat/${data.chatId}`);
+            } else {
+                alert("Failed to open chat");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
 
 
@@ -82,13 +100,33 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {users.length > 0 ? (
                         users.map((user) => (
+                            // <div
+                            //     key={user.id}
+                            //     className="p-4 bg-gray-800 rounded-xl hover:bg-gray-700 transition cursor-pointer"
+                            //     onClick={async () => {
+                            //         const res = await fetch("/api/chat/open", {
+                            //             method: "POST",
+                            //             headers: { "Content-Type": "application/json" },
+                            //             body: JSON.stringify({ receiverId: user.id }),
+                            //         });
+
+                            //         const data = await res.json();
+                            //         if (data.chatId) {
+                            //             router.push(`/chat/${data.chatId}`);
+                            //         } else {
+                            //             console.error("Failed to open chat:", data);
+                            //         }
+                            //     }}
+                            // >
+                            //     <p className="font-semibold">{user.name || "Unnamed User"}</p>
+                            //     <p className="text-gray-400 text-sm">{user.email}</p>
+                            // </div>
                             <div
                                 key={user.id}
                                 className="p-4 bg-gray-800 rounded-xl hover:bg-gray-700 transition cursor-pointer"
-                                onClick={() => router.push(`/chat/${user.id}`)}
+                                onClick={() => handleOpenChat(user.id)}
                             >
-                                <p className="font-semibold">{user.name || "Unnamed User"}</p>
-                                <p className="text-gray-400 text-sm">{user.email}</p>
+                                {user.name}
                             </div>
                         ))
                     ) : (

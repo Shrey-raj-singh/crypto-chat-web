@@ -6,18 +6,25 @@ datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id            String    @id @map("_id") @default(auto()) @db.ObjectId
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
   name          String?
   email         String    @unique
   emailVerified DateTime?
   image         String?
-  accounts      Account[]
-  sessions      Session[]
+
+  // NextAuth relations
+  accounts Account[]
+  sessions Session[]
+
+  // Chat relations
+  messages  Message[]  @relation("UserMessages")
+  userChats UserChat[]
 }
 
 model Account {
-  id                String  @id @map("_id") @default(auto()) @db.ObjectId
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
   userId            String
   type              String
   provider          String
@@ -36,10 +43,39 @@ model Account {
 }
 
 model Session {
-  id           String   @id @map("_id") @default(auto()) @db.ObjectId
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   sessionToken String   @unique
   userId       String
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id])
+}
+
+// Chat system
+model Chat {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  messages  Message[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  userChats UserChat[]
+}
+
+model Message {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    String
+  sender    User     @relation("UserMessages", fields: [senderId], references: [id])
+  senderId  String
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model UserChat {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  chat   Chat   @relation(fields: [chatId], references: [id])
+  chatId String
+
+  @@unique([userId, chatId])
 }
