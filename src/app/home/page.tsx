@@ -4,10 +4,12 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+type User = { id: string; name?: string; email?: string };
+
 export default function HomePage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const [users, setUsers] = useState([]);
+    const [users, setUsers] = useState<User[]>([]);
     useEffect(() => {
         if (status === "loading") return;
         if (!session) {
@@ -15,7 +17,7 @@ export default function HomePage() {
         } else {
             fetchUsers();
         }
-    }, [session, status, router]);
+    }, [session, status, router,users]);
 
     const fetchUsers = async () => {
         try {

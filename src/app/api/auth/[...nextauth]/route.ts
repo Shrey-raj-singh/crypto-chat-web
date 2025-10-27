@@ -1,11 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth,  { AuthOptions, Session, TokenSet } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import prisma from "@/lib/prisma"; // your Prisma client
+import prisma from "@/lib/prisma"; 
 
-export const authOptions = {
-  adapter: PrismaAdapter(prisma), // <--- this will save users to MongoDB
+export const authOptions: AuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -19,11 +19,11 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   pages: { signIn: "/login" },
   session: {
-    strategy: "jwt", // ensures token is available
+    strategy: "jwt", 
   },
   callbacks: {
-    async session({ session, token }) {
-      if (session.user) session.user.id = token?.sub;
+    async session({ session, token }: { session: Session; token: any }) {
+      if (session.user) session.user.id = token?.sub as string;
       return session;
     },
   },

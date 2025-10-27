@@ -8,12 +8,12 @@ export async function GET(req: Request) {
     // Use NextRequest for App Router
     const session = await getServerSession(authOptions);
 
-    if (!session || !session.user) {
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const users = await prisma.user.findMany({
-      where: { NOT: { email: session.user.email } },
+      where: { NOT: { email: session.user.email as string } },
       select: { id: true, name: true, email: true },
     });
 

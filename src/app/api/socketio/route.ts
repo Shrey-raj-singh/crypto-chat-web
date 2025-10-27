@@ -1,29 +1,38 @@
+import { NextRequest } from "next/server";
 import { Server } from "socket.io";
-import { NextApiRequest } from "next";
-import { NextApiResponseServerIO } from "@/types/next"; // We'll define type for TS
+import { Server as NetServer } from "http";
 
-export default function SocketHandler(req: NextApiRequest, res: NextApiResponseServerIO) {
-  if (!res.socket.server.io) {
-    const io = new Server(res.socket.server);
-    res.socket.server.io = io;
+export const runtime = "nodejs"; // important for socket.io
 
-    io.on("connection", (socket) => {
-      console.log("New client connected", socket.id);
+export async function GET(req: NextRequest) {
+  return new Response("Socket.IO endpoint");
+}
 
-      socket.on("join_chat", (chatId: string) => {
-        socket.join(chatId);
-        console.log("Joined chat:", chatId);
+// @ts-ignore
+export const POST = async (req: NextRequest) => {
+  // Next.js expects POST to be a function that takes (req: NextRequest)
+  // But we’ll actually only initialize socket server once
+  const { socket } = req as any;
+  if (!socket.server.io) {
+    console.log("Initializing Socket.IO server...");
+    const io = new Server(socket.server as unknown as NetServer, {
+      path: "/api/socketio",
+    });
+    socket.server.io = io;
+
+    io.on("connection", (client) => {
+      console.log("Client connected", client.id);
+
+      client.on("send-message", (msg) => {
+        // Broadcast to all in the room
+        io.to(msg.chatId).emit("receive-message", msg);
       });
 
-      socket.on("send_message", (data) => {
-        // Broadcast message to other users in the chat
-        io.to(data.chatId).emit("receive_message", data);
-      });
-
-      socket.on("disconnect", () => {
-        console.log("Client disconnected", socket.id);
+      client.on("join-chat", (chatId) => {
+        client.join(chatId);
       });
     });
   }
-  res.end();
-}
+
+  return new Response("Socket.IO server initialized");
+};

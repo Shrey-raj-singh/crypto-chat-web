@@ -13,8 +13,16 @@ const pusher = new Pusher({
 });
 
 export async function GET(req: Request, context: { params: Promise<{ chatId: string }> }) {
-  const { chatId } = await context.params;
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { chatId } = await context.params;
+  
+  const userChat = await prisma.userChat.findFirst({
+    where: { chatId, userId: session.user.id },
+  });
+
+  if (!userChat) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const messages = await prisma.message.findMany({
     where: { chatId },
     include: { sender: { select: { id: true, name: true, email: true, image: true } } },

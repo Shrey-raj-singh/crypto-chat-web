@@ -3,9 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Pusher from "pusher-js";
-
-// Replace with actual session userId (NextAuth)
-const sessionUserId = "68fe705f3f52c7d4865c6b83"; // dynamically fetch from session
+import { useSession, signOut } from "next-auth/react";
 
 interface User {
   id: string;
@@ -23,9 +21,11 @@ interface Message {
 export default function ChatPage() {
   const params = useParams();
   const chatId = params.chatId;
+  const { data: session, status } = useSession();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [authorized, setAuthorized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom whenever messages change
@@ -34,6 +34,9 @@ export default function ChatPage() {
   const fetchMessages = async () => {
     try {
       const res = await fetch(`/api/chat/${chatId}/messages`);
+      if (res.status===200) {
+        setAuthorized(true);
+      }
       const data = await res.json();
       if (Array.isArray(data)) setMessages(data);
     } catch (err) {
@@ -41,27 +44,28 @@ export default function ChatPage() {
     }
   };
 
+
   useEffect(() => {
-    fetchMessages();
+  fetchMessages(); // fetch initial messages once
 
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+  const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+  });
+
+  const channel = pusher.subscribe(`chat-${chatId}`);
+  channel.bind("new-message", (newMessage: Message) => {
+    setMessages((prev) => {
+      if (prev.find((msg) => msg.id === newMessage.id)) return prev; // prevent duplicates
+      return [...prev, newMessage];
     });
+  });
 
-    const channel = pusher.subscribe(`chat-${chatId}`);
-    channel.bind("new-message", (newMessage: Message) => {
-      setMessages((prev) => {
-        // Prevent duplicate messages
-        if (prev.find((msg) => msg.id === newMessage.id)) return prev;
-        return [...prev, newMessage];
-      });
-    });
+  return () => {
+    channel.unbind_all();
+    channel.unsubscribe();
+  };
+}, [chatId]); 
 
-    return () => {
-      channel.unbind_all();
-      channel.unsubscribe();
-    };
-  }, [chatId]);
 
   useEffect(scrollToBottom, [messages]);
 
@@ -85,8 +89,8 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto border rounded-lg">
       <div className="flex-1 p-4 overflow-y-auto">
-        {messages.map((msg) => {
-          const isMe = msg.senderId === sessionUserId; // check if sender is current user
+        {authorized?messages.map((msg) => {
+          const isMe = msg.senderId === session?.user.id; // check if sender is current user
           return (
             <div
               key={msg.id}
@@ -103,7 +107,7 @@ export default function ChatPage() {
               </div>
             </div>
           );
-        })}
+        }):"You are not authorized to view messages."}
         <div ref={messagesEndRef} />
       </div>
 

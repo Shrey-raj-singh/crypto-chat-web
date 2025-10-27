@@ -11,17 +11,15 @@ model User {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
   name          String?
   email         String    @unique
+  password      String?   // <--- add this
   emailVerified DateTime?
   image         String?
-
-  // NextAuth relations
-  accounts Account[]
-  sessions Session[]
-
-  // Chat relations
-  messages  Message[]  @relation("UserMessages")
-  userChats UserChat[]
+  accounts      Account[]
+  sessions      Session[]
+  messages      Message[]  @relation("UserMessages")
+  userChats     UserChat[]
 }
+
 
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
