@@ -1,35 +1,49 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import connectDB from "@/lib/db";
-import User from "@/models/User";
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    await connectDB();
-    const { name, email, password } = await req.json();
-
-    if (!name || !email || !password) {
-      return NextResponse.json({ message: "All fields are required" }, { status: 400 });
+    const { email, password } = await req.json();
+    if (!email || !password) {
+      return NextResponse.json({ error: "Missing email or password" }, { status: 400 });
     }
 
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return NextResponse.json({ message: "User already exists" }, { status: 409 });
+      return NextResponse.json({ error: "Email already registered" }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
 
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
+    await prisma.oTP.create({
+      data: { email, code: otpCode, expiresAt },
     });
 
-    await newUser.save();
+    // Send email via nodemailer
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
 
-    return NextResponse.json({ message: "User registered successfully" }, { status: 201 });
-  } catch (error) {
-    console.error("Signup error:", error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    await transporter.sendMail({
+      from: `"NovaNet" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Your OTP Code",
+      text: `Your verification code is: ${otpCode}`,
+    });
+
+    return NextResponse.json({ message: "OTP sent to email" });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

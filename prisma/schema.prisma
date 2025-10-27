@@ -13,6 +13,7 @@ model User {
   email         String    @unique
   password      String?   // <--- add this
   emailVerified DateTime?
+  createdAt      DateTime @default(now())
   image         String?
   accounts      Account[]
   sessions      Session[]
@@ -20,6 +21,14 @@ model User {
   userChats     UserChat[]
 }
 
+
+model OTP {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
 
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId

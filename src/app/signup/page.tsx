@@ -5,15 +5,20 @@ import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [step, setStep] = useState<"signup" | "otp">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  // Step 1: Send OTP
+  async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setMessage("");
 
     if (password !== confirm) {
       setError("Passwords do not match");
@@ -28,13 +33,39 @@ export default function SignupPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!res.ok) throw new Error("Signup failed");
-      const { token } = await res.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Signup failed");
 
-      localStorage.setItem("access_token", token);
-      router.push("/home");
+      setMessage("OTP sent to your email. Enter the code below to verify.");
+      setStep("otp");
     } catch (err: any) {
       setError(err.message || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Step 2: Verify OTP
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, otp }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "OTP verification failed");
+
+      setMessage("Account created successfully! Redirecting to login...");
+      setTimeout(() => router.push("/login"), 2000);
+    } catch (err: any) {
+      setError(err.message || "OTP verification failed");
     } finally {
       setLoading(false);
     }
@@ -47,44 +78,73 @@ export default function SignupPage() {
           Create Account
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
-            required
-          />
+        {step === "signup" && (
+          <form onSubmit={handleSignup} className="space-y-4">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
+              required
+            />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
-            required
-          />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
+              required
+            />
 
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
-            required
-          />
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
+              required
+            />
 
-          {error && <p className="text-center text-red-400 text-sm">{error}</p>}
+            {error && <p className="text-center text-red-400 text-sm">{error}</p>}
+            {message && <p className="text-center text-green-400 text-sm">{message}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-cyan-500 py-2 font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-50"
-          >
-            {loading ? "Creating..." : "Sign Up"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-cyan-500 py-2 font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-50"
+            >
+              {loading ? "Sending OTP..." : "Sign Up"}
+            </button>
+          </form>
+        )}
+
+        {step === "otp" && (
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <p className="text-center text-gray-400">Enter the OTP sent to {email}</p>
+
+            <input
+              type="text"
+              placeholder="OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
+              required
+            />
+
+            {error && <p className="text-center text-red-400 text-sm">{error}</p>}
+            {message && <p className="text-center text-green-400 text-sm">{message}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-cyan-500 py-2 font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-50"
+            >
+              {loading ? "Verifying..." : "Verify OTP"}
+            </button>
+          </form>
+        )}
 
         <p className="mt-6 text-center text-sm text-gray-400">
           Already have an account?{" "}
