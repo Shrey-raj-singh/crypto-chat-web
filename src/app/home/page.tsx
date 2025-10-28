@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession,  signOut, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -17,7 +17,7 @@ export default function HomePage() {
         } else {
             fetchUsers();
         }
-    }, [session, status, router,users]);
+    }, [session, status, router, users]);
 
     const fetchUsers = async () => {
         try {
@@ -32,23 +32,6 @@ export default function HomePage() {
         }
     };
 
-    // localStorage.removeItem("access_token"); // clear invalid token
-    // router.push("/login");
-
-    // useEffect(() => {
-    //     console.log("Session detail...", session);
-    //     async function fetchUsers() {
-    //         try {
-    //             const res = await fetch("/api/users");
-    //             const data = await res.json();
-    //             console.log("Fetched users:", data.users);
-    //             setUsers(data.users || []);
-    //         } catch (err) {
-    //             console.error("Error fetching users:", err);
-    //         }
-    //     }
-    //     fetchUsers();
-    // }, []);
     const handleOpenChat = async (receiverId: string) => {
         try {
             const res = await fetch("/api/chat/open", {
@@ -82,6 +65,18 @@ export default function HomePage() {
         <main className="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e293b] text-white p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">💬 NovaNet Chat</h1>
+                <button
+                    onClick={() => signIn("google", { callbackUrl: "/home" })}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition"
+                >
+                    Link Google
+                </button>
+                <button
+                    onClick={() => signIn("github", { callbackUrl: "/home" })}
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition"
+                >
+                    Link GitHub
+                </button>
                 <button
                     onClick={() => signOut({ callbackUrl: "/login" })}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition"
@@ -139,54 +134,3 @@ export default function HomePage() {
         </main>
     );
 }
-
-
-
-// "use client";
-
-// import { useEffect, useState } from "react";
-// import { useSession, signOut } from "next-auth/react";
-// import { useRouter } from "next/navigation";
-
-// type User = { id: string; name?: string; email?: string };
-
-// export default function HomePage() {
-//   const { data: session, status } = useSession();
-//   const router = useRouter();
-//   const [users, setUsers] = useState<User[]>([]);
-
-//   useEffect(() => {
-//     if (status === "loading") return;
-//     if (!session) router.push("/login");
-//     else fetchUsers();
-//   }, [session, status, router]);
-
-// //   const fetchUsers = async () => {
-// //     try {
-// //       const res = await fetch("/api/users");
-// //       if (!res.ok) throw new Error("Failed to fetch users");
-// //       const data = await res.json();
-// //       setUsers(data.users || []);
-// //     } catch (err) {
-// //       console.error(err);
-// //     }
-// //   };
-
-
-//   const fetchUsers = async (token: string) => {
-//     try {
-//       const res = await fetch("/api/users", {
-//         headers: { Authorization: `Bearer ${token}` },
-//       });
-//       if (!res.ok) throw new Error("Failed to fetch users");
-//       const data = await res.json();
-//       setUsers(data.users || []);
-//       setLoading(false);
-//     } catch (err) {
-//       console.error(err);
-//       localStorage.removeItem("access_token"); // clear invalid token
-//       router.push("/login");
-//     }
-//   };
-
-
