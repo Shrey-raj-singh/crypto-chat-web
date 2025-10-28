@@ -50,6 +50,40 @@ export const authOptions: AuthOptions = {
       if (session.user) session.user.id = token.sub!;
       return session;
     },
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+        });
+
+        // If email exists but Google not linked yet, link it
+        if (existingUser && existingUser.id !== user.id) {
+          const linkedAccount = await prisma.account.findFirst({
+            where: {
+              userId: existingUser.id,
+              provider: "google",
+            },
+          });
+
+          if (!linkedAccount) {
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                provider: "google",
+                providerAccountId: account.providerAccountId,
+                type: account.type,
+                access_token: account.access_token,
+                token_type: account.token_type,
+                scope: account.scope,
+              },
+            });
+          }
+          return true;
+        }
+      }
+      return true;
+    },
+    
     async jwt({ token, user }) {
       if (user) token.sub = user.id;
       return token;

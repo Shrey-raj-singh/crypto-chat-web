@@ -65,12 +65,12 @@ export default function HomePage() {
         <main className="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e293b] text-white p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">💬 NovaNet Chat</h1>
-                <button
+                {/* <button
                     onClick={() => signIn("google", { callbackUrl: "/home" })}
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition"
                 >
                     Link Google
-                </button>
+                </button> */}
                 <button
                     onClick={() => signIn("github", { callbackUrl: "/home" })}
                     className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition"
