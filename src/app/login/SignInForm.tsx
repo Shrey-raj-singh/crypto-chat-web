@@ -20,29 +20,52 @@ export default function SignInPage() {
     if (session) router.push(callbackUrl); // redirect if already signed in
   }, [session, status, router, callbackUrl]);
 
+  // const handleEmailSignIn = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   setLoading(true);
+
+  //   try {
+  //     const res = await fetch("/api/auth/signin", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email, password }),
+  //     });
+
+  //     const data = await res.json();
+  //     if (!res.ok) throw new Error(data.error || "Signin failed");
+
+  //     localStorage.setItem("access_token", data.token);
+  //     router.push(callbackUrl);
+  //   } catch (err: any) {
+  //     setError(err.message || "Signin failed");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    try {
-      const res = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+      callbackUrl,
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Signin failed");
+    if (result?.error) throw new Error(result.error);
+    router.push(callbackUrl);
+  } catch (err: any) {
+    setError(err.message || "Signin failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
-      localStorage.setItem("access_token", data.token);
-      router.push(callbackUrl);
-    } catch (err: any) {
-      setError(err.message || "Signin failed");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
