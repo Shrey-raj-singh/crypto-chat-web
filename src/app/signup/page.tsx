@@ -13,6 +13,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [name, setName] = useState("");
+  const [image, setImage] = useState("");
 
   // Step 1: Send OTP
   async function handleSignup(e: React.FormEvent) {
@@ -56,7 +58,7 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, otp }),
+        body: JSON.stringify({ name, email, password, otp, image }),
       });
 
       const data = await res.json();
@@ -80,6 +82,14 @@ export default function SignupPage() {
 
         {step === "signup" && (
           <form onSubmit={handleSignup} className="space-y-4">
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
+            />
             <input
               type="email"
               placeholder="Email"
@@ -105,6 +115,13 @@ export default function SignupPage() {
               onChange={(e) => setConfirm(e.target.value)}
               className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
               required
+            />
+            <input
+              type="text"
+              placeholder="Profile Image URL (optional)"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              className="w-full rounded-lg bg-[#0f172a] px-4 py-2 text-white outline-none focus:ring-2 focus:ring-cyan-400"
             />
 
             {error && <p className="text-center text-red-400 text-sm">{error}</p>}

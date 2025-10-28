@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       select: { chatId: true },
     });
 
-    const senderChatIds = senderChats.map((uc) => uc.chatId);
+    const senderChatIds = senderChats.map((uc: { chatId: any; }) => uc.chatId);
 
     // ✅ Step 2: Check if receiver has any of these chats
     const existingCommonChat = await prisma.userChat.findFirst({

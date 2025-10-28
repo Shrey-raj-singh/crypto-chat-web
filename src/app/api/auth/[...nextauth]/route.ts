@@ -22,6 +22,8 @@ export const authOptions: AuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        name: { label: "Name", type: "text" },
+        image: { label: "Profile Image URL", type: "url" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password)
@@ -36,7 +38,7 @@ export const authOptions: AuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.password!);
         if (!valid) throw new Error("Invalid credentials");
 
-        return { id: user.id, email: user.email };
+        return { id: user.id, name: user.name, email: user.email, image: user.image };
       },
     }),
   ],
