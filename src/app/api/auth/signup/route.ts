@@ -3,15 +3,16 @@ import prisma from "@/lib/prisma";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
-    if (!email) {
-      return NextResponse.json({ error: "Missing email" }, { status: 400 });
-    }
-    if (!password) {
-      return NextResponse.json({ error: "Missing password" }, { status: 400 });
-    }
+    
+    if (!email) return NextResponse.json({ error: "Missing email" }, { status: 400 });
+    if (!password) return NextResponse.json({ error: "Missing password" }, { status: 400 });
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -44,6 +45,17 @@ export async function POST(req: NextRequest) {
       to: email,
       subject: "Your OTP Code",
       text: `Your verification code is: ${otpCode}`,
+    });
+
+    await resend.emails.send({
+      from: "NovaNet <no-reply@resend.dev>", // use verified domain later
+      to: email,
+      subject: "Your OTP Code",
+      html: `
+        <p>Your verification code is:</p>
+        <h2 style="color:#4f46e5; font-size:24px;">${otpCode}</h2>
+        <p>This code expires in 5 minutes.</p>
+      `,
     });
 
     return NextResponse.json({ message: "OTP sent to email" });
